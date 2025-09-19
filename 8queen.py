@@ -15,12 +15,10 @@ greeting = tk.Label(root, text="8 QUEENS \u2655",
                     bg="#F0F8FF", fg="#2F4F4F")
 greeting.pack(pady=10)
 
-# Hình ảnh quân hậu
 img = Image.open("queen_white.png")
 img = img.resize((60, 60))
 queen_white = ImageTk.PhotoImage(img)
 
-# Bàn cờ bên trái
 frame1 = tk.Frame(root, width=560, height=560, bg="#DCDCDC")
 frame1.pack(padx=20, pady=20, side='left')
 cell_size = 560 // 8
@@ -33,7 +31,6 @@ for i in range(8):
         btn = tk.Label(frame1, bg=color, relief="flat")
         btn.place(x=x, y=y, width=cell_size, height=cell_size)
 
-# Bàn cờ bên phải để hiển thị kết quả
 frame2 = tk.Frame(root, width=560, height=560, bg="#DCDCDC")
 frame2.pack(padx=20, pady=20, side='right')
 
@@ -124,6 +121,34 @@ def Solve_DLS_steps(limit=8):
     dls(0, limit)
     return steps
 
+goal_state = Solve_BFS_steps()[-1] 
+def Solve_Greedy_steps():
+    steps = []
+    board = np.zeros((8, 8), dtype=int)
+
+    def heuristic(b, row, col):
+        temp = np.copy(b)
+        temp[row][col] = 1
+        return np.sum((temp == 1) & (goal_state == 1))
+
+    for row in range(8):
+        steps.append(np.copy(board))
+        best_col = None
+        best_h = -1
+        for col in range(8):
+            if is_safe(board, row, col):
+                h = heuristic(board, row, col)
+                if h > best_h:
+                    best_h = h
+                    best_col = col
+        if best_col is not None:
+            board[row][best_col] = 1
+            steps.append(np.copy(board))
+        else:
+            break
+    return steps
+
+
 def Solve_IDS_steps():
     steps = []
     board = np.zeros((8, 8), dtype=int)
@@ -138,13 +163,45 @@ def Solve_IDS_steps():
                 dls(row + 1, depth_limit)
                 board[row][col] = 0
 
-    for depth in range(1, 9):  # IDS tăng dần depth limit
+    for depth in range(1, 9): 
         dls(0, depth)
     return steps
 
-# ==============================
-# Hiển thị bàn cờ
-# ==============================
+def Solve_Astar_steps():
+    heap = []
+    steps = []
+    board = np.zeros((8, 8), dtype=int)
+    counter = 0  
+
+    def g_cost(row):
+        # g(n): số hàng đã đặt hậu (chi phí từ gốc)
+        return row
+
+    def h_cost(b, row, col):
+        # h(n): số hậu trùng với goal_state
+        temp = np.copy(b)
+        temp[row][col] = 1
+        return np.sum((temp == 1) & (goal_state == 1))
+
+    # (f, counter, board, row, g)
+    heapq.heappush(heap, (0, counter, board, 0, 0))  
+
+    while heap:
+        f, _, b, r, g = heapq.heappop(heap)
+        steps.append(np.copy(b))
+        if r == 8:  # đủ 8 hậu
+            continue
+        for c in range(8):
+            if is_safe(b, r, c):
+                new_board = np.copy(b)
+                new_board[r][c] = 1
+                counter += 1
+                g_new = g_cost(r+1)  # chi phí g(n)
+                h_new = h_cost(b, r, c)  # heuristic
+                f_new = g_new + h_new
+                heapq.heappush(heap, (f_new, counter, new_board, r+1, g_new))
+    return steps
+
 def show_board(board):
     cell_size = 560 // 8
     for widget in frame2.winfo_children():
@@ -162,9 +219,6 @@ def show_board(board):
                 btn = tk.Label(frame2, bg=color, relief="flat")
                 btn.place(x=x, y=y, width=cell_size, height=cell_size)
 
-# ==============================
-# Logic chạy nghiệm
-# ==============================
 solution_steps = []
 solution_indices = []
 current_solution = 0
@@ -172,6 +226,8 @@ skip_flag = False
 
 def solve_click():
     global solution_steps, solution_indices, current_solution
+    current_solution = 0
+
     if algo_var.get() == "BFS":
         steps = Solve_BFS_steps()
     elif algo_var.get() == "DFS":
@@ -180,16 +236,24 @@ def solve_click():
         steps = Solve_UCS_steps()
     elif algo_var.get() == "DLS":
         steps = Solve_DLS_steps(limit=8)
-    else:  # IDS
+    elif algo_var.get() == "IDS":
         steps = Solve_IDS_steps()
+    elif algo_var.get() == "A*":
+        steps = Solve_Astar_steps()
+    else:
+        steps = Solve_Greedy_steps()
 
     solution_steps = steps
     solution_indices = []
+
     for idx, board in enumerate(steps):
         if np.sum(board) == 8:
             solution_indices.append(idx)
+
     current_solution = 0
-    auto_run_solution(current_solution)
+
+    if solution_indices:  
+        auto_run_solution(current_solution)
 
 def auto_run_solution(sol_idx):
     global skip_flag
@@ -208,7 +272,6 @@ def auto_run_solution(sol_idx):
             return
         show_board(solution_steps[idx])
         root.after(50, run_step, idx+1)
-
     run_step(start)
 
 def continue_click():
@@ -225,9 +288,6 @@ def skip_click():
         sol_idx = solution_indices[current_solution]
         show_board(solution_steps[sol_idx])
 
-# ==============================
-# Nút bấm và lựa chọn thuật toán
-# ==============================
 solve_button = tk.Button(root, text="Giải bài toán",
                          font=("Segoe UI", 15, "bold"),
                          bg="#2F4F4F", fg="#F0F8FF",
@@ -264,11 +324,19 @@ dls_radio = tk.Radiobutton(algo_frame, text="DLS", variable=algo_var, value="DLS
                           font=("Segoe UI", 13), bg="#F0F8FF", fg="#2F4F4F", selectcolor="#DCDCDC", padx=10, pady=5)
 ids_radio = tk.Radiobutton(algo_frame, text="IDS", variable=algo_var, value="IDS",
                           font=("Segoe UI", 13), bg="#F0F8FF", fg="#2F4F4F", selectcolor="#DCDCDC", padx=10, pady=5)
+greedy_radio = tk.Radiobutton(algo_frame, text="Greedy", variable=algo_var, value="Greedy",
+                          font=("Segoe UI", 13), bg="#F0F8FF", fg="#2F4F4F", 
+                          selectcolor="#DCDCDC", padx=10, pady=5)
+astar_radio = tk.Radiobutton(algo_frame, text="A*", variable=algo_var, value="A*",
+                          font=("Segoe UI", 13), bg="#F0F8FF", fg="#2F4F4F", 
+                          selectcolor="#DCDCDC", padx=10, pady=5)
 
 bfs_radio.pack(anchor="w")
 dfs_radio.pack(anchor="w")
 ucs_radio.pack(anchor="w")
 dls_radio.pack(anchor="w")
 ids_radio.pack(anchor="w")
+greedy_radio.pack(anchor="w")
+astar_radio.pack(anchor="w")
 
 root.mainloop()
