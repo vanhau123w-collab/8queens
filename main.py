@@ -2,16 +2,11 @@ import tkinter as tk
 from PIL import Image, ImageTk
 import numpy as np
 from board import show_board
-from algorithms import (
-    Solve_BFS_steps, Solve_DFS_steps, Solve_UCS_steps,
-    Solve_DLS_steps, Solve_IDS_steps, Solve_Greedy_steps,
-    Solve_Astar_steps, Solve_HillClimbing_steps, Solve_SimulatedAnnealing_steps
-)
-
+from algorithms import *
 
 root = tk.Tk()
 root.title("8 QUEENS")
-root.geometry("1400x700+50+50")
+root.geometry("1400x900+50+0")
 root.configure(bg="#F0F8FF")
 
 # Load queen image (sau khi có root)
@@ -56,14 +51,20 @@ def solve_click():
         steps = Solve_DLS_steps()
     elif algo == "IDS":
         steps = Solve_IDS_steps()
+    elif algo == "Greedy":
+        steps = Solve_Greedy_steps()
     elif algo == "A*":
         steps = Solve_Astar_steps()
     elif algo == "Hill Climbing":
         steps = Solve_HillClimbing_steps()
     elif algo == "Simulated Annealing":
         steps = Solve_SimulatedAnnealing_steps()
+    elif algo == "Beam Search":
+        steps = Solve_BeamSearch_steps()
+    elif algo == "Genetic Algorithm":
+        steps = Solve_Genetic_steps()
     else:
-        steps = Solve_Greedy_steps()
+        steps = []
 
     solution_steps = steps
     solution_indices = []
@@ -136,7 +137,12 @@ algo_frame = tk.LabelFrame(root, text="Chọn thuật toán", font=("Segoe UI", 
 algo_frame.pack(pady=10)
 algo_var = tk.StringVar(value="BFS")
 
-algorithms = ["BFS", "DFS", "UCS", "DLS", "IDS", "Greedy", "A*", "Hill Climbing", "Simulated Annealing"]
+algorithms = [
+    "BFS", "DFS", "UCS", "DLS", "IDS",
+    "Greedy", "A*", "Hill Climbing",
+    "Simulated Annealing", "Beam Search",
+    "Genetic Algorithm"
+]
 
 for algo in algorithms:
     tk.Radiobutton(algo_frame, text=algo, variable=algo_var, value=algo,

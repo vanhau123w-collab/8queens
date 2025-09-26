@@ -242,3 +242,74 @@ def Solve_SimulatedAnnealing_steps(max_steps=10000, temp=1000, cooling=0.99):
         temp *= cooling
 
     return steps
+
+def Solve_BeamSearch_steps(beam_width=3):
+    steps = []
+    n = 8
+    board = np.zeros((n, n), dtype=int)
+
+    def heuristic(b):
+        return -count_conflicts(b)  # càng ít xung đột càng tốt
+
+    frontier = [(board, 0)]
+    while frontier:
+        new_frontier = []
+        for b, r in frontier:
+            steps.append(np.copy(b))
+            if r == n:
+                return steps
+            for c in range(n):
+                if is_safe(b, r, c):
+                    new_b = np.copy(b)
+                    new_b[r][c] = 1
+                    new_frontier.append((new_b, r+1))
+        # chọn beam_width trạng thái tốt nhất
+        new_frontier.sort(key=lambda x: heuristic(x[0]), reverse=True)
+        frontier = new_frontier[:beam_width]
+    return steps
+
+def Solve_Genetic_steps(pop_size=50, generations=500, mutation_rate=0.1):
+    steps = []
+    n = 8
+
+    def fitness(chrom):
+        board = np.zeros((n, n), dtype=int)
+        for r, c in enumerate(chrom):
+            board[r][c] = 1
+        return -count_conflicts(board)  
+    population = [np.random.randint(0, n, size=n) for _ in range(pop_size)]
+
+    for gen in range(generations):
+        scores = [fitness(chrom) for chrom in population]
+        best_idx = np.argmax(scores)
+        best_chrom = population[best_idx]
+
+        board = np.zeros((n, n), dtype=int)
+        for r, c in enumerate(best_chrom):
+            board[r][c] = 1
+        steps.append(np.copy(board))
+
+        if -scores[best_idx] == 0: 
+            return steps
+
+        new_pop = []
+        for _ in range(pop_size//2):
+            i, j = np.random.choice(pop_size, 2, replace=False)
+            parent1 = population[i] if scores[i] > scores[j] else population[j]
+
+            i, j = np.random.choice(pop_size, 2, replace=False)
+            parent2 = population[i] if scores[i] > scores[j] else population[j]
+            point = np.random.randint(1, n-1)
+            child1 = np.concatenate((parent1[:point], parent2[point:]))
+            child2 = np.concatenate((parent2[:point], parent1[point:]))
+
+            new_pop.extend([child1, child2])
+
+        for chrom in new_pop:
+            if np.random.rand() < mutation_rate:
+                r = np.random.randint(0, n)
+                chrom[r] = np.random.randint(0, n)
+
+        population = new_pop
+
+    return steps
