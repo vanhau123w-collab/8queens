@@ -1,7 +1,38 @@
 import numpy as np
 import queue, random, math
 import heapq
-from board import is_safe
+
+# =========================
+# HÀM HỖ TRỢ
+# =========================
+
+def is_safe(board, row, col):
+    n = board.shape[0]
+    for i in range(row):
+        if board[i][col] == 1:
+            return False
+        if col - (row - i) >= 0 and board[i][col - (row - i)] == 1:
+            return False
+        if col + (row - i) < n and board[i][col + (row - i)] == 1:
+            return False
+    return True
+
+def count_conflicts(board):
+    """Đếm số xung đột giữa các quân hậu"""
+    n = board.shape[0]
+    positions = [(r, c) for r in range(n) for c in range(n) if board[r][c] == 1]
+    conflicts = 0
+    for i in range(len(positions)):
+        for j in range(i+1, len(positions)):
+            r1, c1 = positions[i]
+            r2, c2 = positions[j]
+            if c1 == c2 or abs(c1 - c2) == abs(r1 - r2):
+                conflicts += 1
+    return conflicts
+
+# =========================
+# THUẬT TOÁN TÌM KIẾM
+# =========================
 
 def Solve_BFS_steps():
     q = queue.Queue()
@@ -39,7 +70,7 @@ def Solve_UCS_steps():
     heap = []
     steps = []
     board = np.zeros((8, 8), dtype=int)
-    counter = 0  
+    counter = 0
 
     def cost_function(row, col):
         return abs(3.5 - row) + abs(3.5 - col)
@@ -89,11 +120,12 @@ def Solve_IDS_steps():
                 dls(row + 1, depth_limit)
                 board[row][col] = 0
 
-    for depth in range(1, 9): 
+    for depth in range(1, 9):
         dls(0, depth)
     return steps
 
-goal_state = Solve_BFS_steps()[-1] 
+goal_state = Solve_BFS_steps()[-1]
+
 def Solve_Greedy_steps():
     steps = []
     board = np.zeros((8, 8), dtype=int)
@@ -124,7 +156,7 @@ def Solve_Astar_steps():
     heap = []
     steps = []
     board = np.zeros((8, 8), dtype=int)
-    counter = 0  
+    counter = 0
 
     def g_cost(row):
         return row
@@ -134,7 +166,7 @@ def Solve_Astar_steps():
         temp[row][col] = 1
         return np.sum((temp == 1) & (goal_state == 1))
 
-    heapq.heappush(heap, (0, counter, board, 0, 0))  
+    heapq.heappush(heap, (0, counter, board, 0, 0))
 
     while heap:
         f, _, b, r, g = heapq.heappop(heap)
@@ -152,16 +184,6 @@ def Solve_Astar_steps():
                 heapq.heappush(heap, (f_new, counter, new_board, r+1, g_new))
     return steps
 
-def count_conflicts(board):
-    n = 8
-    conflicts = 0
-    cols = np.where(board == 1)[1]
-    for i in range(n):
-        for j in range(i+1, n):
-            if cols[i] == cols[j] or abs(cols[i]-cols[j]) == abs(i-j):
-                conflicts += 1
-    return conflicts
-
 def Solve_HillClimbing_steps(max_restarts=100):
     steps = []
     n = 8
@@ -177,8 +199,7 @@ def Solve_HillClimbing_steps(max_restarts=100):
         while True:
             current_conflicts = count_conflicts(board)
             if current_conflicts == 0:
-                # tìm thấy nghiệm hợp lệ
-                return steps  
+                return steps
 
             best_board = None
             best_conflicts = current_conflicts
@@ -197,17 +218,13 @@ def Solve_HillClimbing_steps(max_restarts=100):
                 board[r][c] = 1
 
             if best_board is not None:
-                # cập nhật nếu có trạng thái tốt hơn
                 board = best_board
                 steps.append(np.copy(board))
             else:
-                # nếu không cải thiện → restart
-                break  
-
-    # fallback nếu không tìm thấy (rất hiếm)
+                break
     return steps
 
-def Solve_SimulatedAnnealing_steps(max_steps=10000, temp=1000, cooling=0.99):
+def Solve_SimulatedAnnealing_steps(max_steps=100000, temp=1000, cooling=0.999):
     steps = []
     n = 8
     board = np.zeros((n, n), dtype=int)
@@ -220,7 +237,7 @@ def Solve_SimulatedAnnealing_steps(max_steps=10000, temp=1000, cooling=0.99):
 
     for _ in range(max_steps):
         if current_conflicts == 0:
-            break
+            return steps
         r = random.randint(0, n-1)
         c = np.where(board[r] == 1)[0][0]
         new_c = random.randint(0, n-1)
@@ -232,7 +249,7 @@ def Solve_SimulatedAnnealing_steps(max_steps=10000, temp=1000, cooling=0.99):
         new_conflicts = count_conflicts(board)
 
         delta = new_conflicts - current_conflicts
-        if delta < 0 or random.random() < math.exp(-delta/temp):
+        if delta < 0 or random.random() < math.exp(-delta / temp):
             current_conflicts = new_conflicts
             steps.append(np.copy(board))
         else:
@@ -240,76 +257,77 @@ def Solve_SimulatedAnnealing_steps(max_steps=10000, temp=1000, cooling=0.99):
             board[r][c] = 1
 
         temp *= cooling
-
     return steps
 
 def Solve_BeamSearch_steps(beam_width=3):
     steps = []
     n = 8
-    board = np.zeros((n, n), dtype=int)
 
     def heuristic(b):
-        return -count_conflicts(b)  # càng ít xung đột càng tốt
+        return count_conflicts(b)
 
-    frontier = [(board, 0)]
-    while frontier:
-        new_frontier = []
-        for b, r in frontier:
-            steps.append(np.copy(b))
-            if r == n:
+    board = np.zeros((n, n), dtype=int)
+    for r in range(n):
+        c = random.randint(0, n-1)
+        board[r][c] = 1
+    beam = [board]
+    steps.append(np.copy(board))
+
+    while beam:
+        candidates = []
+        for b in beam:
+            if heuristic(b) == 0:
+                steps.append(np.copy(b))
                 return steps
-            for c in range(n):
-                if is_safe(b, r, c):
-                    new_b = np.copy(b)
-                    new_b[r][c] = 1
-                    new_frontier.append((new_b, r+1))
-        # chọn beam_width trạng thái tốt nhất
-        new_frontier.sort(key=lambda x: heuristic(x[0]), reverse=True)
-        frontier = new_frontier[:beam_width]
+            for r in range(n):
+                c = np.where(b[r] == 1)[0][0]
+                for new_c in range(n):
+                    if new_c != c:
+                        new_b = np.copy(b)
+                        new_b[r][c] = 0
+                        new_b[r][new_c] = 1
+                        candidates.append((heuristic(new_b), new_b))
+        candidates.sort(key=lambda x: x[0])
+        beam = [b for _, b in candidates[:beam_width]]
+        for _, b in candidates[:beam_width]:
+            steps.append(np.copy(b))
     return steps
+
 
 def Solve_Genetic_steps(pop_size=50, generations=500, mutation_rate=0.1):
     steps = []
     n = 8
 
-    def fitness(chrom):
-        board = np.zeros((n, n), dtype=int)
-        for r, c in enumerate(chrom):
-            board[r][c] = 1
-        return -count_conflicts(board)  
-    population = [np.random.randint(0, n, size=n) for _ in range(pop_size)]
+    def fitness(b):
+        return 28 - count_conflicts(b)  # max = 28 (8 queens không ăn nhau)
 
-    for gen in range(generations):
-        scores = [fitness(chrom) for chrom in population]
-        best_idx = np.argmax(scores)
-        best_chrom = population[best_idx]
+    def random_board():
+        b = np.zeros((n, n), dtype=int)
+        for r in range(n):
+            c = random.randint(0, n-1)
+            b[r][c] = 1
+        return b
 
-        board = np.zeros((n, n), dtype=int)
-        for r, c in enumerate(best_chrom):
-            board[r][c] = 1
-        steps.append(np.copy(board))
+    population = [random_board() for _ in range(pop_size)]
+    steps.extend([np.copy(b) for b in population])
 
-        if -scores[best_idx] == 0: 
+    for _ in range(generations):
+        population.sort(key=lambda b: fitness(b), reverse=True)
+        if fitness(population[0]) == 28:
+            steps.append(np.copy(population[0]))
             return steps
-
-        new_pop = []
-        for _ in range(pop_size//2):
-            i, j = np.random.choice(pop_size, 2, replace=False)
-            parent1 = population[i] if scores[i] > scores[j] else population[j]
-
-            i, j = np.random.choice(pop_size, 2, replace=False)
-            parent2 = population[i] if scores[i] > scores[j] else population[j]
-            point = np.random.randint(1, n-1)
-            child1 = np.concatenate((parent1[:point], parent2[point:]))
-            child2 = np.concatenate((parent2[:point], parent1[point:]))
-
-            new_pop.extend([child1, child2])
-
-        for chrom in new_pop:
-            if np.random.rand() < mutation_rate:
-                r = np.random.randint(0, n)
-                chrom[r] = np.random.randint(0, n)
-
-        population = new_pop
-
+        new_pop = population[:10]  # elitism
+        while len(new_pop) < pop_size:
+            p1, p2 = random.sample(population[:20], 2)
+            c = random.randint(1, n-2)
+            child1 = np.vstack((p1[:c], p2[c:]))
+            child2 = np.vstack((p2[:c], p1[c:]))
+            for child in [child1, child2]:
+                if random.random() < mutation_rate:
+                    r = random.randint(0, n-1)
+                    child[r] = np.zeros(n)
+                    child[r][random.randint(0, n-1)] = 1
+                new_pop.append(child)
+        population = new_pop[:pop_size]
+        steps.extend([np.copy(b) for b in population])
     return steps
