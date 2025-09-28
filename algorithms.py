@@ -67,27 +67,32 @@ def Solve_DFS_steps():
     return steps
 
 def Solve_UCS_steps():
-    heap = []
     steps = []
-    board = np.zeros((8, 8), dtype=int)
-    counter = 0
-
+    n = 8
+    board = np.zeros((n, n), dtype=int)
+    
     def cost_function(row, col):
         return abs(3.5 - row) + abs(3.5 - col)
-
+    
+    heap = []
+    counter = 0
     heapq.heappush(heap, (0, counter, board, 0))
+    
+    all_steps = [] 
+    
     while heap:
         cost, _, b, r = heapq.heappop(heap)
-        steps.append(np.copy(b))
-        if r == 8:
+        all_steps.append(np.copy(b)) 
+        if r == n:
             continue
-        for c in range(8):
+        for c in range(n):
             if is_safe(b, r, c):
                 new_board = np.copy(b)
                 new_board[r][c] = 1
                 counter += 1
                 new_cost = cost + cost_function(r, c)
                 heapq.heappush(heap, (new_cost, counter, new_board, r + 1))
+    steps.extend(all_steps)
     return steps
 
 def Solve_DLS_steps(limit=8):
@@ -136,18 +141,19 @@ def Solve_Greedy_steps():
         return np.sum((temp == 1) & (goal_state == 1))
 
     for row in range(8):
-        steps.append(np.copy(board))
         best_col = None
         best_h = -1
         for col in range(8):
             if is_safe(board, row, col):
                 h = heuristic(board, row, col)
+                temp_board = np.copy(board)
+                temp_board[row][col] = 1
+                steps.append(temp_board) 
                 if h > best_h:
                     best_h = h
                     best_col = col
         if best_col is not None:
             board[row][best_col] = 1
-            steps.append(np.copy(board))
         else:
             break
     return steps
@@ -259,40 +265,42 @@ def Solve_SimulatedAnnealing_steps(max_steps=100000, temp=1000, cooling=0.999):
         temp *= cooling
     return steps
 
-def Solve_BeamSearch_steps(beam_width=3):
-    steps = []
+import numpy as np
+
+def Solve_BeamSearch_steps(beam_width=50):
     n = 8
+    steps = []
 
-    def heuristic(b):
-        return count_conflicts(b)
+    # Khởi tạo beam: mỗi board khác nhau cho row 0
+    beam = []
+    for col in range(min(beam_width, n)):
+        b = np.zeros((n, n), dtype=int)
+        b[0][col] = 1
+        beam.append(b)
+        steps.append(np.copy(b))
 
-    board = np.zeros((n, n), dtype=int)
-    for r in range(n):
-        c = random.randint(0, n-1)
-        board[r][c] = 1
-    beam = [board]
-    steps.append(np.copy(board))
-
-    while beam:
+    # Duyệt các row từ 1 đến 7
+    for row in range(1, n):
         candidates = []
         for b in beam:
-            if heuristic(b) == 0:
-                steps.append(np.copy(b))
-                return steps
-            for r in range(n):
-                c = np.where(b[r] == 1)[0][0]
-                for new_c in range(n):
-                    if new_c != c:
-                        new_b = np.copy(b)
-                        new_b[r][c] = 0
-                        new_b[r][new_c] = 1
-                        candidates.append((heuristic(new_b), new_b))
-        candidates.sort(key=lambda x: x[0])
-        beam = [b for _, b in candidates[:beam_width]]
-        for _, b in candidates[:beam_width]:
-            steps.append(np.copy(b))
-    return steps
+            for col in range(n):
+                if is_safe(b, row, col):
+                    new_b = np.copy(b)
+                    new_b[row][col] = 1
+                    candidates.append(new_b)
+                    steps.append(np.copy(new_b))
 
+        # Nếu không còn candidate nào an toàn → loại board
+        if not candidates:
+            # Thử lại từ đầu hoặc tăng beam_width
+            raise ValueError("Không còn candidate an toàn. Hãy tăng beam_width hoặc restart.")
+
+        # Giữ beam_width board tốt nhất (không conflict)
+        # Vì tất cả candidate đều an toàn nên conflict = 0
+        beam = candidates[:beam_width]
+
+    # Board cuối cùng hợp lệ
+    return steps
 
 def Solve_Genetic_steps(pop_size=50, generations=500, mutation_rate=0.1):
     steps = []
@@ -331,3 +339,36 @@ def Solve_Genetic_steps(pop_size=50, generations=500, mutation_rate=0.1):
         population = new_pop[:pop_size]
         steps.extend([np.copy(b) for b in population])
     return steps
+
+def and_or_search(initial_state, N=8):
+    """Trả về danh sách các board tuần tự để hiển thị"""
+    steps = []
+    def or_search(state, path):
+        if is_goal(state, N):
+            steps.append(state.copy())  # lưu board khi là goal
+            return True
+        if any(np.array_equal(state, p) for p in path):
+            return False
+
+        row = np.sum(np.any(state == 1, axis=1))
+        if row >= N:
+            return False
+
+        actions = [(row, col) for col in range(N) if is_safe(state, row, col)]
+        random.shuffle(actions)
+        for r, c in actions:
+            new_board = np.copy(state)
+            new_board[r][c] = 1
+            steps.append(new_board.copy())  
+            if or_search(new_board, path + [state]):
+                return True
+            steps.append(state.copy())
+        return False
+
+    or_search(initial_state, [])
+    return steps
+
+def is_goal(board, N=8):
+    queens = np.sum(board == 1)
+    return queens == N and count_conflicts(board) == 0
+
