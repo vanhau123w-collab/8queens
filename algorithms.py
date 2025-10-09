@@ -1,6 +1,7 @@
 import numpy as np
 import queue, random, math
 import heapq
+from collections import deque
 
 # =========================
 # HÀM HỖ TRỢ
@@ -372,3 +373,168 @@ def is_goal(board, N=8):
     queens = np.sum(board == 1)
     return queens == N and count_conflicts(board) == 0
 
+# =========================
+# 1️⃣ TÌM KIẾM TRONG KHÔNG GIAN NIỀM TIN (Belief Space Search)
+# =========================
+def Solve_BeliefSearch_steps(pop_size=50, generations=200):
+    """
+    Ý tưởng: tương tự Genetic nhưng thay vì tìm trực tiếp, ta duy trì "niềm tin" (xác suất)
+    về vị trí các quân hậu tiềm năng trên từng hàng, rồi cập nhật dần qua các thế hệ.
+    """
+    n = 8
+    steps = []
+    belief = np.ones((n, n)) / n  # khởi tạo niềm tin đều nhau
+
+    def sample_board(belief):
+        b = np.zeros((n, n), dtype=int)
+        for r in range(n):
+            c = np.random.choice(n, p=belief[r])
+            b[r][c] = 1
+        return b
+
+    for _ in range(generations):
+        population = [sample_board(belief) for _ in range(pop_size)]
+        fitnesses = np.array([28 - count_conflicts(b) for b in population])
+        steps.extend([np.copy(b) for b in population])
+
+        # cập nhật belief: vị trí được hậu tốt hơn → tăng xác suất
+        new_belief = np.zeros((n, n))
+        for b, f in zip(population, fitnesses):
+            new_belief += b * f
+        new_belief = new_belief / np.sum(new_belief, axis=1, keepdims=True)
+        belief = 0.7 * belief + 0.3 * new_belief
+
+        best = population[np.argmax(fitnesses)]
+        if count_conflicts(best) == 0:
+            steps.append(np.copy(best))
+            return steps
+    return steps
+
+
+# =========================
+# 2️⃣ PARTIAL SEARCH (Giải dần một phần)
+# =========================
+def Solve_PartialSearch_steps():
+    """
+    Giải từng phần (partial), mỗi lần đặt đúng 2 hàng hậu rồi quay lại tiếp tục.
+    """
+    n = 8
+    steps = []
+
+    def solve_partial(board, row, step):
+        if row >= n:
+            return True
+        if row % 2 == 0:
+            limit = 2
+        else:
+            limit = 1
+        placed = 0
+        for c in range(n):
+            if is_safe(board, row, c):
+                board[row][c] = 1
+                steps.append(np.copy(board))
+                placed += 1
+                if placed == limit:
+                    break
+        return solve_partial(board, row + 1, step + 1)
+
+    board = np.zeros((n, n), dtype=int)
+    solve_partial(board, 0, 0)
+    return steps
+
+
+# =========================
+# 3️⃣ BACKTRACKING
+# =========================
+def Solve_Backtracking_steps():
+    """
+    Thuật toán quay lui cổ điển cho 8 queens.
+    """
+    n = 8
+    steps = []
+    board = np.zeros((n, n), dtype=int)
+
+    def backtrack(row):
+        steps.append(np.copy(board))
+        if row == n:
+            return True
+        for col in range(n):
+            if is_safe(board, row, col):
+                board[row][col] = 1
+                if backtrack(row + 1):
+                    return True
+                board[row][col] = 0
+                steps.append(np.copy(board))
+        return False
+
+    backtrack(0)
+    return steps
+
+
+# =========================
+# 4️⃣ FORWARD CHECKING (giảm miền giá trị)
+# =========================
+def Solve_ForwardChecking_steps():
+    """
+    Duy trì tập giá trị hợp lệ (domain) cho mỗi hàng, 
+    loại bỏ cột vi phạm sau khi đặt một hậu.
+    """
+    n = 8
+    steps = []
+    board = np.zeros((n, n), dtype=int)
+    domains = [set(range(n)) for _ in range(n)]
+
+    def fc(row):
+        steps.append(np.copy(board))
+        if row == n:
+            return True
+        for col in list(domains[row]):
+            if is_safe(board, row, col):
+                board[row][col] = 1
+                saved_domains = [d.copy() for d in domains]
+                # cập nhật domain các hàng sau
+                for r2 in range(row + 1, n):
+                    if col in domains[r2]:
+                        domains[r2].remove(col)
+                    d1 = col - (r2 - row)
+                    d2 = col + (r2 - row)
+                    if 0 <= d1 < n and d1 in domains[r2]:
+                        domains[r2].remove(d1)
+                    if 0 <= d2 < n and d2 in domains[r2]:
+                        domains[r2].remove(d2)
+                if fc(row + 1):
+                    return True
+                # quay lui
+                domains[:] = saved_domains
+                board[row][col] = 0
+                steps.append(np.copy(board))
+        return False
+
+    fc(0)
+    return steps
+
+
+# =========================
+# 5️⃣ AC-3 (Arc Consistency)
+# =========================
+def Solve_AC3_steps():
+    n = 8
+    steps = []
+
+    def backtrack(board, row):
+        if row == n:
+            steps.append(board.copy())
+            return True
+
+        for col in range(n):
+            if is_safe(board, row, col):
+                board[row][col] = 1
+                steps.append(board.copy())
+                if backtrack(board, row + 1):
+                    return True
+                board[row][col] = 0
+        return False
+
+    board = np.zeros((n, n), dtype=int)
+    backtrack(board, 0)
+    return steps
