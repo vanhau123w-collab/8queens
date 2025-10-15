@@ -46,6 +46,6 @@ Nếu bạn muốn đóng góp cho dự án, vui lòng tạo một "pull request
 
 Tác giả
 Phạm Văn Hậu - 23110098 
-Thuật toán giải đố: Tích hợp thuật toán quay lui (backtracking) để tìm ra lời giải một cách hiệu quả.
+Thuật toán giải đố: Tích hợp các thuật toán như bfs, dfs, ids, quay lui (backtracking),... để tìm ra lời giải một cách hiệu quả.
 
 Hiển thị nhiều lời giải: Khả năng duyệt qua các lời giải khác nhau của bài toán.
