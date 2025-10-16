@@ -1,51 +1,129 @@
-Giới thiệu
-Bài toán 8 quân hậu là một bài toán nổi tiếng trong toán học và khoa học máy tính. Nó đòi hỏi người chơi phải đặt 8 quân hậu trên một bàn cờ tiêu chuẩn (8x8) mà không có quân hậu nào nằm trên cùng một hàng, cùng một cột hoặc cùng một đường chéo. Đây là một ví dụ tuyệt vời để minh họa cho các thuật toán tìm kiếm và quay lui (backtracking).
+👑 Trực quan hóa Giải thuật Bài toán 8 Quân Hậu
+Dự án này là một ứng dụng desktop được xây dựng bằng Python và Tkinter để trực quan hóa quá trình giải quyết Bài toán 8 Quân Hậu bằng nhiều thuật toán Trí tuệ Nhân tạo khác nhau. Mục tiêu chính là cung cấp một công cụ học tập sinh động, giúp người dùng hiểu rõ hơn về cách hoạt động, ưu và nhược điểm của từng thuật toán.
 
-Dự án này cung cấp một giao diện trực quan để người chơi có thể tự mình thử sức giải bài toán hoặc xem máy tính tìm ra một trong 92 lời giải có thể có.
+✨ Tính năng chính
+Giao diện đồ họa trực quan: Sử dụng Tkinter để tạo ra một giao diện thân thiện, dễ sử dụng.
 
-Luật chơi
-Luật chơi rất đơn giản, dựa trên cách di chuyển của quân Hậu trong cờ vua:
+Minh họa từng bước: Hiển thị từng bước đi của thuật toán, từ trạng thái ban đầu đến khi tìm ra lời giải.
 
-Một hàng, một hậu: Mỗi hàng chỉ có thể có duy nhất một quân hậu.
+Hỗ trợ đa dạng thuật toán: Cài đặt hơn 15 thuật toán kinh điển thuộc nhiều trường phái khác nhau (tìm kiếm mù, tìm kiếm có thông tin, tìm kiếm cục bộ, CSP,...).
 
-Một cột, một hậu: Mỗi cột chỉ có thể có duy nhất một quân hậu.
+Điều khiển linh hoạt: Cho phép người dùng xem từng bước (Bước tiếp theo), bỏ qua đến lời giải cuối cùng (Bỏ qua), hoặc tự động chạy (auto-run).
 
-Một đường chéo, một hậu: Mỗi đường chéo chỉ có thể có duy nhất một quân hậu.
+Tùy chỉnh tốc độ: Dễ dàng thay đổi tốc độ của chế độ auto-run trong file cấu hình.
 
-Người chơi chiến thắng khi đặt thành công cả 8 quân hậu lên bàn cờ mà không vi phạm bất kỳ quy tắc nào ở trên.
+🚀 Các thuật toán được cài đặt
+Dự án bao gồm một bộ sưu tập phong phú các thuật toán, được phân loại như sau:
 
-Cách chơi
-Chế độ người chơi:
+1. Tìm kiếm mù (Uninformed Search)
+BFS (Breadth-First Search): Tìm kiếm theo chiều rộng, đảm bảo tìm ra lời giải ở độ sâu nông nhất.
 
-Nhấp chuột vào một ô trống trên bàn cờ để đặt một quân hậu.
+DFS (Depth-First Search): Tìm kiếm theo chiều sâu, đi sâu vào một nhánh cho đến khi hết đường.
 
-Nếu vị trí đặt vi phạm luật chơi (bị một quân hậu khác tấn công), một cảnh báo sẽ hiện ra.
+UCS (Uniform Cost Search): Tìm kiếm chi phí thấp nhất, mở rộng nút có chi phí đường đi nhỏ nhất từ gốc.
 
-Để di chuyển một quân hậu đã đặt, hãy nhấp vào quân hậu đó và sau đó nhấp vào vị trí mới.
+DLS (Depth-Limited Search): Tương tự DFS nhưng có giới hạn về độ sâu.
 
-Để xóa một quân hậu khỏi bàn cờ, hãy nhấp chuột phải vào quân hậu đó.
+IDS (Iterative Deepening Search): Kết hợp ưu điểm của BFS và DFS.
 
-Trò chơi kết thúc khi bạn đặt thành công 8 quân hậu.
+2. Tìm kiếm có thông tin (Informed Search)
+Greedy Search: Tìm kiếm tham lam, luôn chọn hướng đi có vẻ tốt nhất tại thời điểm hiện tại dựa trên hàm heuristic.
 
-Chế độ máy tính giải:
+A* Search (A-Star): Kết hợp chi phí thực tế (g) và chi phí ước tính (h) để tìm đường đi tối ưu.
 
-Nhấn vào nút "Giải" (Solve) hoặc một nút tương tự.
+3. Tìm kiếm cục bộ (Local Search) & Thuật toán Metaheuristic
+Hill Climbing: Leo đồi, luôn di chuyển đến trạng thái lân cận tốt hơn.
 
-Chương trình sẽ tự động tìm và hiển thị một lời giải cho bài toán.
+Simulated Annealing: Mô phỏng luyện kim, cho phép di chuyển đến trạng thái xấu hơn với một xác suất nhất định để tránh bị kẹt ở tối ưu cục bộ.
 
-Bạn có thể nhấn nút "Giải pháp khác" (Next Solution) để xem các lời giải khác nhau (nếu có).
+Beam Search: Giữ lại một số lượng (beam_width) trạng thái tốt nhất ở mỗi bước để khám phá tiếp.
 
-Tính năng
-Giao diện đồ họa trực quan: Bàn cờ được hiển thị rõ ràng, giúp người chơi dễ dàng tương tác.
+Genetic Algorithm: Thuật toán di truyền, mô phỏng quá trình tiến hóa tự nhiên (lai ghép, đột biến) để tìm lời giải.
 
-Chế độ chơi linh hoạt: Cho phép người chơi tự giải đố hoặc xem máy tính trình diễn lời giải.
+4. Các thuật toán nâng cao
+And-Or Search: Phù hợp cho các bài toán có thể được phân rã thành các bài toán con.
 
-Kiểm tra nước đi hợp lệ: Tự động phát hiện và cảnh báo khi người chơi đặt quân hậu vào vị trí không hợp lệ.
-Đóng góp
-Nếu bạn muốn đóng góp cho dự án, vui lòng tạo một "pull request". Mọi sự đóng góp để cải thiện trò chơi đều được hoan nghênh.
+Belief Space Search: Tìm kiếm trong không gian "niềm tin", sử dụng mô hình xác suất để hướng dẫn quá trình tìm kiếm, tương tự như các thuật toán tối ưu hóa phân bố ước lượng (EDA).
 
-Tác giả
-Phạm Văn Hậu - 23110098 
-Thuật toán giải đố: Tích hợp các thuật toán như bfs, dfs, ids, quay lui (backtracking),... để tìm ra lời giải một cách hiệu quả.
+Partial Search: Một phương pháp tiếp cận tùy chỉnh, giải quyết bài toán bằng cách đặt một vài quân hậu một lúc thay vì từng quân một.
 
-Hiển thị nhiều lời giải: Khả năng duyệt qua các lời giải khác nhau của bài toán.
+5. Giải bài toán ràng buộc (Constraint Satisfaction Problems - CSP)
+Backtracking: Quay lui, thuật toán nền tảng cho các bài toán CSP, thử và sai một cách có hệ thống.
+
+Forward Checking: Cải tiến của Backtracking, sau khi gán một giá trị cho biến, nó sẽ kiểm tra và loại bỏ các giá trị không tương thích trong miền của các biến chưa được gán.
+
+AC-3 (Arc Consistency Algorithm #3): Một thuật toán dùng để tiền xử lý, đảm bảo tính nhất quán cung giữa các biến để loại bỏ các giá trị không thể có trước khi bắt đầu tìm kiếm.
+
+🛠️ Công nghệ sử dụng
+Ngôn ngữ: Python 3
+
+Thư viện giao diện: Tkinter
+
+Xử lý hình ảnh: Pillow (PIL)
+
+Thao tác ma trận: NumPy
+
+⚙️ Cài đặt và Chạy dự án
+Yêu cầu
+Python 3.6+
+
+Pip
+
+Các bước cài đặt
+Clone repository về máy:
+
+Bash
+
+git clone <URL_CUA_REPOSITORY>
+cd <TEN_THU_MUC_DU_AN>
+(Khuyến khích) Tạo và kích hoạt môi trường ảo:
+
+Bash
+
+python -m venv venv
+# Trên Windows
+.\venv\Scripts\activate
+# Trên macOS/Linux
+source venv/bin/activate
+Cài đặt các thư viện cần thiết:
+
+Bash
+
+pip install numpy Pillow
+Chạy ứng dụng: Đảm bảo file ảnh queen_white.png nằm cùng cấp với các file script.
+
+Bash
+
+python main.py
+📖 Hướng dẫn sử dụng
+Chạy chương trình: Mở ứng dụng bằng lệnh python main.py.
+
+Chọn thuật toán: Ở khung bên phải, chọn một thuật toán từ danh sách.
+
+Bắt đầu giải: Nhấn nút "Giải bài toán". Thuật toán sẽ bắt đầu chạy và hiển thị trạng thái ban đầu trên bàn cờ bên phải.
+
+Theo dõi quá trình:
+
+Đối với các thuật toán như Hill Climbing, Genetic Algorithm,...:
+
+Nhấn "Bước tiếp theo" để xem từng bước lặp của thuật toán.
+
+Nhấn "Bỏ qua" để nhảy đến trạng thái cuối cùng (lời giải nếu tìm thấy).
+
+Chế độ auto-run sẽ tự động chạy qua tất cả các bước.
+
+Đối với các thuật toán như BFS, DFS,... (tìm nhiều lời giải):
+
+Chương trình sẽ tự động chạy các bước để tìm ra lời giải đầu tiên.
+
+Nhấn "Phương án kế tiếp" để xem quá trình tìm ra lời giải tiếp theo.
+
+Nhấn "Bỏ qua" để hiển thị ngay lập tức lời giải hiện tại mà không cần xem các bước trung gian.
+
+📂 Cấu trúc dự án
+.
+├── main.py             # File chính, xử lý giao diện và luồng sự kiện
+├── algorithms.py       # Chứa logic cài đặt tất cả các thuật toán
+├── board.py            # Chứa các hàm tiện ích liên quan đến bàn cờ (hiển thị, kiểm tra)
+├── queen_white.png     # Ảnh quân hậu
+└── README.md           # File này
